@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ss_res_partner_tree" model="ir.ui.view">
+        <field name="name">smartstock.res.partner.tree</field>
+        <field name="model">res.partner</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <tree string="Khách hàng" sample="1">
+                <field name="complete_name" string="Tên khách hàng"/>
+                <field name="phone" string="Điện thoại" optional="show"/>
+                <field name="email" string="Email" optional="show"/>
+                <field name="street" string="Địa chỉ" optional="hide"/>
+                <field name="city" string="Tỉnh/Thành phố" optional="show"/>
+                <field name="country_id" string="Quốc gia" optional="hide"/>
+                <field name="user_id" string="Nhân viên phụ trách" optional="show" widget="many2one_avatar_user"/>
+                <field name="ss_confirmed_order_count" string="Đơn đã xác nhận" optional="show"/>
+                <field name="ss_last_order_date" string="Đặt hàng gần nhất" optional="show"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="ss_res_partner_search" model="ir.ui.view">
+        <field name="name">smartstock.res.partner.search</field>
+        <field name="model">res.partner</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='inactive']" position="before">
+                <filter string="Khách hàng" name="ss_customer" domain="[('customer_rank', '>', 0)]"/>
+                <filter string="Khách hàng của tôi" name="ss_my_customer" domain="[('user_id', '=', uid)]"/>
+                <separator/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="phone" string="Điện thoại"/>
+                <field name="city" string="Tỉnh/Thành phố"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Bổ sung thống kê vào tab "Bán hàng & Mua hàng" của form liên hệ. -->
+    <record id="ss_res_partner_form" model="ir.ui.view">
+        <field name="name">smartstock.res.partner.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='sale']" position="inside">
+                <field name="ss_confirmed_order_count" groups="sales_team.group_sale_salesman"/>
+                <field name="ss_last_order_date" groups="sales_team.group_sale_salesman"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_ss_customer" model="ir.actions.act_window">
+        <field name="name">Khách hàng</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="search_view_id" ref="ss_res_partner_search"/>
+        <field name="view_ids" eval="[
+            Command.clear(),
+            Command.create({'view_mode': 'tree', 'view_id': ref('ss_res_partner_tree')}),
+            Command.create({'view_mode': 'kanban', 'view_id': ref('base.res_partner_kanban_view')}),
+            Command.create({'view_mode': 'form', 'view_id': ref('base.view_partner_form')}),
+        ]"/>
+        <field name="context">{'res_partner_search_mode': 'customer', 'default_is_company': True, 'search_default_ss_customer': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Tạo khách hàng đầu tiên</p>
+            <p>Khách hàng sẽ tự được gắn nhãn "Khách hàng" khi có đơn bán đầu tiên.</p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Menu SmartStock (tiếng Việt). Menu chỉ để điều hướng; quyền dữ liệu được bảo vệ
+    bởi ACL + record rule của các nhóm chuẩn mà nhóm SmartStock kế thừa.
+    Mục "Tổng quan" (dashboard) sẽ do module smartstock_report thêm vào menu_ss_root.
+-->
+<odoo>
+    <menuitem id="menu_ss_root" name="SmartStock" sequence="5"
+              web_icon="smartstock_core,static/description/icon.png"
+              groups="group_smartstock_salesman,group_smartstock_warehouse"/>
+
+    <!-- ===== Bán hàng ===== -->
+    <menuitem id="menu_ss_sales" name="Bán hàng" parent="menu_ss_root" sequence="20"
+              groups="group_smartstock_salesman"/>
+    <menuitem id="menu_ss_quotation" name="Báo giá" parent="menu_ss_sales"
+              action="action_ss_quotation" sequence="10"/>
+    <menuitem id="menu_ss_sale_order" name="Đơn bán hàng" parent="menu_ss_sales"
+              action="action_ss_sale_order" sequence="20"/>
+    <menuitem id="menu_ss_sale_to_deliver" name="Đơn chờ giao hàng" parent="menu_ss_sales"
+              action="action_ss_sale_order_to_deliver" sequence="30"/>
+    <menuitem id="menu_ss_customer" name="Khách hàng" parent="menu_ss_sales"
+              action="action_ss_customer" sequence="40"/>
+
+    <!-- ===== Sản phẩm ===== -->
+    <menuitem id="menu_ss_products" name="Sản phẩm" parent="menu_ss_root" sequence="30"/>
+    <menuitem id="menu_ss_product" name="Danh sách sản phẩm" parent="menu_ss_products"
+              action="action_ss_product" sequence="10"/>
+    <menuitem id="menu_ss_product_low_stock" name="Cảnh báo tồn kho thấp" parent="menu_ss_products"
+              action="action_ss_product_low_stock" sequence="20"/>
+
+    <!-- ===== Kho hàng (dùng nguyên action chuẩn của Inventory) ===== -->
+    <menuitem id="menu_ss_inventory" name="Kho hàng" parent="menu_ss_root" sequence="40"
+              groups="stock.group_stock_user"/>
+    <menuitem id="menu_ss_stock_on_hand" name="Tồn kho hiện tại" parent="menu_ss_inventory"
+              action="stock.dashboard_open_quants" sequence="10"/>
+    <menuitem id="menu_ss_receipt" name="Phiếu nhập kho" parent="menu_ss_inventory"
+              action="stock.action_picking_tree_incoming" sequence="20"/>
+    <menuitem id="menu_ss_delivery" name="Phiếu xuất kho" parent="menu_ss_inventory"
+              action="stock.action_picking_tree_outgoing" sequence="30"/>
+    <menuitem id="menu_ss_internal" name="Điều chuyển nội bộ" parent="menu_ss_inventory"
+              action="stock.action_picking_tree_internal" sequence="40"/>
+    <menuitem id="menu_ss_move_history" name="Lịch sử dịch chuyển" parent="menu_ss_inventory"
+              action="stock.stock_move_line_action" sequence="50"/>
+
+    <!-- ===== Báo cáo chuẩn (dashboard riêng nằm ở smartstock_report) ===== -->
+    <menuitem id="menu_ss_reporting" name="Báo cáo" parent="menu_ss_root" sequence="80"
+              groups="group_smartstock_sales_manager"/>
+    <menuitem id="menu_ss_sale_analysis" name="Phân tích bán hàng" parent="menu_ss_reporting"
+              action="sale.action_order_report_all" sequence="50"/>
+
+    <!-- ===== Cấu hình ===== -->
+    <menuitem id="menu_ss_config" name="Cấu hình" parent="menu_ss_root" sequence="100"
+              groups="group_smartstock_admin"/>
+    <menuitem id="menu_ss_product_category" name="Nhóm sản phẩm" parent="menu_ss_config"
+              action="product.product_category_action_form" sequence="10"/>
+    <menuitem id="menu_ss_uom" name="Đơn vị tính" parent="menu_ss_config"
+              action="uom.product_uom_categ_form_action" sequence="20" groups="uom.group_uom"/>
+    <menuitem id="menu_ss_warehouse" name="Kho" parent="menu_ss_config"
+              action="stock.action_warehouse_form" sequence="30"/>
+</odoo>

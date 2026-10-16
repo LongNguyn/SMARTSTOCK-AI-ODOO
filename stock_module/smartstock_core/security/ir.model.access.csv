@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_stock_valuation_layer_ss_sales_manager,stock.valuation.layer smartstock sales manager,stock_account.model_stock_valuation_layer,group_smartstock_sales_manager,1,0,0,0

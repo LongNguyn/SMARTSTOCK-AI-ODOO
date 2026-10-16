@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Danh sách đơn bán SmartStock: phân biệt rõ trạng thái đơn (state),
+        trạng thái giao hàng (delivery_status - sale_stock) và xuất hóa đơn (invoice_status).
+        Form dùng nguyên form chuẩn của Sales (thuế, tổng tiền theo cấu hình Odoo).
+    -->
+    <record id="ss_sale_order_tree" model="ir.ui.view">
+        <field name="name">smartstock.sale.order.tree</field>
+        <field name="model">sale.order</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <tree string="Đơn bán hàng" sample="1" decoration-muted="state == 'cancel'">
+                <field name="name" string="Số chứng từ"/>
+                <field name="date_order" string="Ngày đặt" widget="date"/>
+                <field name="partner_id" string="Khách hàng"/>
+                <field name="user_id" string="Nhân viên bán hàng" widget="many2one_avatar_user" optional="show"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="amount_untaxed" string="Chưa thuế" sum="Tổng chưa thuế" widget="monetary" optional="show"/>
+                <field name="amount_tax" string="Thuế" sum="Tổng thuế" widget="monetary" optional="hide"/>
+                <field name="amount_total" string="Tổng tiền" sum="Tổng tiền" widget="monetary"/>
+                <field name="state" string="Trạng thái" widget="badge"
+                       decoration-info="state in ('draft', 'sent')"
+                       decoration-success="state == 'sale'"/>
+                <field name="delivery_status" string="Giao hàng" widget="badge" optional="show"
+                       decoration-warning="delivery_status in ('pending', 'started', 'partial')"
+                       decoration-success="delivery_status == 'full'"/>
+                <field name="invoice_status" string="Hóa đơn" widget="badge" optional="show"
+                       decoration-info="invoice_status == 'to invoice'"
+                       decoration-success="invoice_status == 'invoiced'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="ss_sale_order_search" model="ir.ui.view">
+        <field name="name">smartstock.sale.order.search</field>
+        <field name="model">sale.order</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='my_sale_orders_filter']" position="after">
+                <separator/>
+                <filter string="Báo giá" name="ss_quotation" domain="[('state', 'in', ('draft', 'sent'))]"/>
+                <filter string="Đơn đã xác nhận" name="ss_confirmed" domain="[('state', '=', 'sale')]"/>
+                <filter string="Đã hủy" name="ss_cancel" domain="[('state', '=', 'cancel')]"/>
+                <separator/>
+                <filter string="Chưa giao xong" name="ss_to_deliver"
+                        domain="[('state', '=', 'sale'), ('delivery_status', 'in', ('pending', 'started', 'partial'))]"/>
+                <filter string="Đã giao đủ" name="ss_delivered" domain="[('delivery_status', '=', 'full')]"/>
+                <filter string="Chờ xuất hóa đơn" name="ss_to_invoice" domain="[('invoice_status', '=', 'to invoice')]"/>
+                <separator/>
+                <filter string="Ngày đặt" name="ss_date_order" date="date_order"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter string="Trạng thái" name="ss_group_state" context="{'group_by': 'state'}"/>
+                <filter string="Giao hàng" name="ss_group_delivery" context="{'group_by': 'delivery_status'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_ss_quotation" model="ir.actions.act_window">
+        <field name="name">Báo giá</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">tree,form,kanban,pivot,graph</field>
+        <field name="search_view_id" ref="ss_sale_order_search"/>
+        <field name="view_ids" eval="[
+            Command.clear(),
+            Command.create({'view_mode': 'tree', 'view_id': ref('ss_sale_order_tree')}),
+            Command.create({'view_mode': 'form', 'view_id': ref('sale.view_order_form')}),
+        ]"/>
+        <field name="context">{'search_default_ss_quotation': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Tạo báo giá mới</p>
+            <p>Báo giá chưa phải doanh thu. Xác nhận báo giá để chuyển thành đơn bán và sinh phiếu giao hàng.</p>
+        </field>
+    </record>
+
+    <record id="action_ss_sale_order" model="ir.actions.act_window">
+        <field name="name">Đơn bán hàng</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">tree,form,kanban,pivot,graph</field>
+        <field name="search_view_id" ref="ss_sale_order_search"/>
+        <field name="view_ids" eval="[
+            Command.clear(),
+            Command.create({'view_mode': 'tree', 'view_id': ref('ss_sale_order_tree')}),
+            Command.create({'view_mode': 'form', 'view_id': ref('sale.view_order_form')}),
+        ]"/>
+        <field name="context">{'search_default_ss_confirmed': 1}</field>
+    </record>
+
+    <record id="action_ss_sale_order_to_deliver" model="ir.actions.act_window">
+        <field name="name">Đơn chờ giao hàng</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="ss_sale_order_search"/>
+        <field name="view_ids" eval="[
+            Command.clear(),
+            Command.create({'view_mode': 'tree', 'view_id': ref('ss_sale_order_tree')}),
+            Command.create({'view_mode': 'form', 'view_id': ref('sale.view_order_form')}),
+        ]"/>
+        <field name="context">{'search_default_ss_to_deliver': 1}</field>
+    </record>
+</odoo>

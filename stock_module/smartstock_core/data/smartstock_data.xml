@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tham số cấu hình mặc định. noupdate="1": chỉ tạo lần đầu, nâng cấp/cài lại
+    không ghi đè giá trị người dùng đã chỉnh và không sinh bản ghi trùng.
+-->
+<odoo noupdate="1">
+    <!-- Số ngày không phát sinh xuất bán để coi là hàng bán chậm (dùng ở smartstock_report). -->
+    <record id="param_slow_moving_days" model="ir.config_parameter">
+        <field name="key">smartstock.slow_moving_days</field>
+        <field name="value">60</field>
+    </record>
+</odoo>

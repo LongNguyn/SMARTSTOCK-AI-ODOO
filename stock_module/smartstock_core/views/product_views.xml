@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Danh sách sản phẩm SmartStock: mã, tên, nhóm, ĐVT, giá, tồn kho, ngưỡng, trạng thái. -->
+    <record id="ss_product_template_tree" model="ir.ui.view">
+        <field name="name">smartstock.product.template.tree</field>
+        <field name="model">product.template</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <tree string="Sản phẩm" sample="1"
+                  decoration-danger="ss_stock_status == 'out'"
+                  decoration-warning="ss_stock_status == 'low'"
+                  decoration-muted="not active">
+                <field name="default_code" string="Mã sản phẩm" optional="show"/>
+                <field name="name" string="Tên sản phẩm"/>
+                <field name="categ_id" string="Nhóm sản phẩm" optional="show"/>
+                <field name="uom_id" string="Đơn vị tính" optional="show" groups="uom.group_uom"/>
+                <field name="type" column_invisible="True"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="cost_currency_id" column_invisible="True"/>
+                <field name="list_price" string="Giá bán" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <!-- Giá vốn chỉ hiển thị cho Quản lý kinh doanh / Quản lý kho (nút bị loại khỏi arch ở server). -->
+                <field name="standard_price" string="Giá vốn" widget="monetary" optional="show"
+                       options="{'currency_field': 'cost_currency_id'}"
+                       groups="smartstock_core.group_smartstock_sales_manager,stock.group_stock_manager"/>
+                <field name="qty_available" string="Tồn hiện có" invisible="type != 'product'"/>
+                <field name="virtual_available" string="Tồn dự báo" optional="hide" invisible="type != 'product'"/>
+                <field name="ss_min_qty" string="Tồn tối thiểu" optional="show" invisible="type != 'product'"/>
+                <field name="ss_stock_status" widget="badge"
+                       decoration-danger="ss_stock_status == 'out'"
+                       decoration-warning="ss_stock_status == 'low'"
+                       decoration-success="ss_stock_status == 'ok'"/>
+                <field name="active" string="Hoạt động" widget="boolean_toggle" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Tìm kiếm / lọc sản phẩm. Kế thừa "primary" để không ảnh hưởng các màn hình chuẩn. -->
+    <record id="ss_product_template_search" model="ir.ui.view">
+        <field name="name">smartstock.product.template.search</field>
+        <field name="model">product.template</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='inactive']" position="before">
+                <filter string="Hàng lưu kho" name="ss_storable" domain="[('type', '=', 'product')]"/>
+                <filter string="Tồn kho thấp" name="ss_low_stock" domain="[('ss_is_low_stock', '=', True)]"/>
+                <filter string="Hết hàng" name="ss_out_of_stock" domain="[('ss_stock_status', '=', 'out')]"/>
+                <separator/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Form sản phẩm: thêm ngưỡng tồn tối thiểu và trạng thái tồn kho. -->
+    <record id="ss_product_template_form" model="ir.ui.view">
+        <field name="name">smartstock.product.template.form</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='categ_id']" position="after">
+                <field name="ss_min_qty" invisible="type != 'product'"/>
+                <field name="ss_stock_status" widget="badge" invisible="type != 'product'"
+                       decoration-danger="ss_stock_status == 'out'"
+                       decoration-warning="ss_stock_status == 'low'"
+                       decoration-success="ss_stock_status == 'ok'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_ss_product" model="ir.actions.act_window">
+        <field name="name">Sản phẩm</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="search_view_id" ref="ss_product_template_search"/>
+        <field name="view_ids" eval="[
+            Command.clear(),
+            Command.create({'view_mode': 'tree', 'view_id': ref('ss_product_template_tree')}),
+            Command.create({'view_mode': 'kanban', 'view_id': ref('product.product_template_kanban_view')}),
+            Command.create({'view_mode': 'form', 'view_id': ref('product.product_template_form_view')}),
+        ]"/>
+        <field name="context">{'default_detailed_type': 'product', 'search_default_filter_to_sell': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Tạo sản phẩm đầu tiên</p>
+            <p>Khai báo mã, nhóm, đơn vị tính, giá bán và ngưỡng tồn kho tối thiểu.</p>
+        </field>
+    </record>
+
+    <record id="action_ss_product_low_stock" model="ir.actions.act_window">
+        <field name="name">Cảnh báo tồn kho thấp</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="ss_product_template_search"/>
+        <field name="view_ids" eval="[
+            Command.clear(),
+            Command.create({'view_mode': 'tree', 'view_id': ref('ss_product_template_tree')}),
+            Command.create({'view_mode': 'form', 'view_id': ref('product.product_template_form_view')}),
+        ]"/>
+        <field name="context">{'search_default_ss_low_stock': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Không có sản phẩm nào dưới mức tồn tối thiểu</p>
+            <p>Đặt "Tồn kho tối thiểu" trên sản phẩm lưu kho để bật cảnh báo.</p>
+        </field>
+    </record>
+</odoo>
